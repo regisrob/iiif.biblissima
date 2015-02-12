@@ -17,6 +17,7 @@ a, a:link {
   margin-bottom: 5px;
   background-color: #f8f5f2;
   border-color: #e6dcd1;
+  min-width: 120px;
 }
 .item .thumbnail img {
   max-width: 112px;
