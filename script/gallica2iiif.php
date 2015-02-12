@@ -35,14 +35,9 @@ $ARK_NAME = $ark_array[2];
 //$ark_array = array($uri[2], $uri[3], $uri[4]);
 //$ARK = implode("/", $ark_array);
 
-//--- Create directory named with ark name
-/*$mf_dirname = $ARK_NAME;
-if (!is_dir($mf_dirname)) {
-  mkdir($mf_dirname, 0750);
-}*/
 
 /* 
- * ====== XML SOURCE DATA
+ * ====== XML DATA SOURCES
  */
 
 $PAGINATION_URL = "http://gallica.bnf.fr/services/Pagination?ark=".$ARK;
@@ -67,6 +62,69 @@ $GALLICA_URL = $IMAGE_BASE_URI;
 $MANIFEST_URI     = "http://iiif.biblissima.fr/manifests/". $ARK ."/manifest.json";
 $SEQUENCE_URI     = $IIIF_BASE_URI . "/sequence/normal";
 $CANVAS_BASE_URI  = $IIIF_BASE_URI . "/canvas";
+
+/*
+ * ====== GET BAM RECORD URL
+ */
+
+/* 
+ * Function to query data.bnf Sparql endpoint to retrieve BAM URL for a given ARK name
+ */
+function getUrlBam( $ARK_NAME ) {
+  
+  $format = 'application/sparql-results+json';
+  
+  $sparqlQuery =
+  "SELECT ?urlBam
+  WHERE {
+    ?p <http://www.w3.org/2000/01/rdf-schema#seeAlso> ?urlBam .
+    ?p <http://rdvocab.info/RDARelationshipsWEMI/electronicReproduction> <http://gallica.bnf.fr/ark:/12148/".$ARK_NAME."> .
+    FILTER regex(?urlBam,'^http://archivesetmanuscrits','i')
+  }";
+  
+  $queryUrl = 'http://data.bnf.fr/sparql?default-graph-uri='
+  .'&query='.urlencode($sparqlQuery)
+  .'&format='.urlencode($format)
+  .'&timeout=0&debug=off';
+  
+  return $queryUrl;
+}
+
+/* 
+ * Function to get data response back
+ */
+function request( $url ) {
+  // is curl installed?
+  if (!function_exists('curl_init')){
+    die('CURL is not installed!');
+  }
+  
+  // get curl handle
+  $ch = curl_init();
+  
+  // set request url
+  curl_setopt($ch,
+    CURLOPT_URL,
+    $url);
+  
+  // return response, don't print/echo
+  curl_setopt($ch,
+    CURLOPT_RETURNTRANSFER,
+    true);
+  
+  // More options for curl: http://www.php.net/curl_setopt	
+  $response = curl_exec($ch);
+  curl_close($ch);
+  return $response;
+}
+
+/* 
+ * Send request, process response, and get value of URL BAM
+ */
+$requestURL = getUrlBam( $ARK_NAME );
+$responseArray = json_decode( request($requestURL), true);
+
+$BAM_URL = $responseArray['results']['bindings'][0]['urlBam']['value'];
 
 /*
  * ====== PRESENTATION RESOURCE PROPERTIES
@@ -257,7 +315,21 @@ $thumbnail = array(
 
 $logo = "https://raw.githubusercontent.com/IIIF/m2/master/images/logos/bnf-logo.jpeg";
 $license = "https://creativecommons.org/publicdomain/zero/1.0/";
-$related = $GALLICA_URL;
+if( !empty($BAM_URL) ) {
+  $related = array(
+    array(
+      "@id" => $GALLICA_URL,
+      "format" => "text/html"
+    ),
+    array(
+      "@id" => $BAM_URL,
+      "format" => "text/html"
+    )
+  );
+}else {
+  $related = "$GALLICA_URL";
+}
+
 $seeAlso = array(
   "@id"     => $OAI_RECORD_URL,
   "format"  => "application/xml"
@@ -362,14 +434,25 @@ $manifestJson = json_encode( $manifest, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASH
 
 //echo $manifestJson;
 
+/* 
+ * ====== Write manifest to disk
+ */
+
+//--- Create directory named with ark name
+/*$mf_dirname = $ARK_NAME;
+if (!is_dir($mf_dirname)) {
+  mkdir($mf_dirname, 0750);
+}*/
+
 //--- Write manifest.json into the appropriate folder
-//$mf_filename = 'manifest.json';
-//file_put_contents("$mf_dirname/$mf_filename", $manifestJson);
+/*$mf_filename = 'manifest.json';
+file_put_contents("$mf_dirname/$mf_filename", $manifestJson);*/
 
 
 /* 
- * ====== MongoDB management
+ * ====== Insert into MongoDB
  */
+
 
 $m = new MongoClient(); // connect to mongo
 $db = $m->selectDB("manifests"); // select database
@@ -387,4 +470,5 @@ if( $cursor->count() > 0 ) {
 } else{
   $coll->insert( $manifest ); // insert manifest array as json
 }
+
 ?>
