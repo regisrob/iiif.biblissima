@@ -53,7 +53,7 @@ require_once('common.php');
   print_r(iterator_to_array($cursor));
   echo "</pre>";*/
 
-  $records_per_page = 10;
+  $records_per_page = 15;
 
   // include pagination class
   require 'Zebra_Pagination.php';
@@ -61,9 +61,10 @@ require_once('common.php');
   // instantiate the pagination object
   $pagination = new Zebra_Pagination();
 
-  // fetch docs in db->coll with limit and skip
+  // fetch docs in db->coll with limit/skip/sort
   $limit = $records_per_page;
   $skip = ($pagination->get_page() - 1) * $records_per_page;
+  //$sort = array( 'label' => 1 );
 
   $cursor = $coll->find()->limit( $limit )->skip( $skip );
 
@@ -110,7 +111,28 @@ require_once('common.php');
         <div class="thumbnail">
           <img src="<?php echo $doc['thumbnail']['@id']; ?>" alt="">
         </div>
-        <small><span class="glyphicon glyphicon-new-window" aria-hidden="true"></span>&nbsp; <a href="<?php echo $doc['related']; ?>" target="_blank">View in Gallica</a></small>
+        <small>
+        <?php
+          $related = $doc['related'];
+    
+          if( is_array($related) ) {
+            foreach( $related as $link ) {
+              //echo $id['@id'] . "<br />";
+              
+              if( preg_match("#^http://gallica#i", $link['@id']) ) { ?>
+                <span class="glyphicon glyphicon-new-window" aria-hidden="true"></span>&nbsp; <a href="<?php echo $link['@id'] ?>" target="_blank">View in Gallica</a>
+              <?php  
+              }elseif( preg_match("#^http://archivesetmanuscrits#i", $link['@id']) ) { ?>
+                <br /><span class="glyphicon glyphicon-new-window" aria-hidden="true"></span>&nbsp; <a href="<?php echo $link['@id'] ?>" target="_blank">View record</a>
+              <?php 
+              }
+            }
+          } elseif( is_string($related) ) { ?>
+            <span class="glyphicon glyphicon-new-window" aria-hidden="true"></span>&nbsp; <a href="<?php echo $related ?>" target="_blank">View in Gallica</a>
+          <?php 
+          }
+          ?>
+        </small>
       </div>
       <div class="item-logo">
         <img src="<?php echo $doc['logo']; ?>" alt="" width="90" height="90">
@@ -121,7 +143,7 @@ require_once('common.php');
           <em>
             <?php
               $titre = $doc['metadata'][2]['value'];
-              if(is_array($titre)) {
+              if( is_array($titre) ) {
                 foreach( $titre as $val ) {
                    echo $val . "<br />";
                 }
@@ -174,7 +196,9 @@ require_once('common.php');
       <div class="thumbnail">
         <img src="{{thumbnail.[@id]}}" alt=""></img>
       </div>
-      <small><span class="glyphicon glyphicon-new-window" aria-hidden="true"></span>&nbsp; <a target="_blank" href="{{related}}">View in Gallica</a></small>
+      <small>
+      <span class="glyphicon glyphicon-new-window" aria-hidden="true"></span>&nbsp; <a target="_blank" href="{{related}}">View in Gallica</a>
+      </small>
     </div>
     <div class="item-logo">
       <img src="{{logo}}" height="90" width="90" alt="">
@@ -246,12 +270,13 @@ $(document).ready(function(){
     $('#searchByShelfmark').val('').focus();
 
     // Datum containg value, tokens, and custom properties
-    //console.log(datum._id);
+    //console.log(datum._id['$id']);
     
     // get item data based on MongoId
     $.ajax({
       url : 'get_item.php',
-      data: 'id='+datum._id,
+      //data: 'id='+datum._id,
+      data: 'id='+datum._id['$id'],
       dataType : 'json'
     }
     ).done(function(data) {
