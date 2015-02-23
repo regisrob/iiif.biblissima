@@ -1,28 +1,19 @@
 <?php
-
 /* ================================================================
  *  
  *  @author : Régis Robineau
  *  @project : Equipex Biblissima
- *  @description : Create a JSON-LD manifest (IIIF Presentation API 2.0)
- *  for one Gallica object out of two webservices provided by the BnF
- *  (OAI and Pagination), and send it to a MongoDB database
+ *  @description : Create a JSON-LD manifest (IIIF Presentation API 2.0) for one Gallica object out of two webservices provided by the BnF (OAI-PMH and Pagination.xml), and send it to a MongoDB database
  *
  * ================================================================
 */
-
-/* Aides SimpleXML :
- * - http://www.sitepoint.com/parsing-xml-with-simplexml/
- * - http://www.sitepoint.com/simplexml-and-namespaces/
- * - http://php.net/manual/en/book.simplexml.php
- * - http://www.loria.fr/~abelaid/Enseignement/l3ScCo/PHP/Cours8-SimpleXML.pdf
- * */
-
-/* 
- * ====== ARK identifier
+ 
+/* ======================================
+ * ## GET ARK PARAMETER
+ * ======================================
  */
 
-//--- Get ark name from url (dev only)
+//--- Get ark name from url param (in dev)
 $ARK = $_GET['ark'];
 $ark_array = explode("/", $ARK);
 $ARK_NAME = $ark_array[2];
@@ -31,67 +22,85 @@ $ARK_NAME = $ark_array[2];
 //$uri = explode("/", $_SERVER['REQUEST_URI']);
 //$ARK_NAME = $uri[4];
 
-//--- Get full ark identifier from url
+//--- Get full ark identifier from url (build manifest from url for any Gallica object)
 //$ark_array = array($uri[2], $uri[3], $uri[4]);
 //$ARK = implode("/", $ark_array);
 
 
+/* ======================================
+ * ## DATA INPUT METHODS
+ * ======================================
+ */
+ 
 /* 
- * ====== XML DATA SOURCES
+ * From CSV
  */
+//$csvMethodIsEnabled  = true;
+$csvFile = "all_mss_traite.csv";
 
-$PAGINATION_URL = "http://gallica.bnf.fr/services/Pagination?ark=".$ARK;
-$OAI_RECORD_URL = "http://oai.bnf.fr/oai2/OAIHandler?verb=GetRecord&metadataPrefix=oai_dc&identifier=oai:bnf.fr:gallica/".$ARK;
-
-//--- Load xml files w/ SimpleXML
-$pagination_xml = simplexml_load_file("$PAGINATION_URL");
-$oai_record_xml = simplexml_load_file("$OAI_RECORD_URL");
-
-/*
- * ====== CONSTANTES
- */
-
-$CONTEXT_PREZ = "http://iiif.io/api/presentation/2/context.json";
-$CONTEXT_IMAGE = "http://iiif.io/api/image/1/context.json";
-$PROFILE_IMAGE = "http://iiif.io/api/image/1/level2.json";
-$IIIF_BASE_URI = "http://gallica.bnf.fr/iiif/" . $ARK;
-$IMAGE_BASE_URI = "http://gallica.bnf.fr/" . $ARK;
-$IMAGE_QUALITY = "native.jpg";
-$GALLICA_URL = $IMAGE_BASE_URI;
-
-$MANIFEST_URI     = "http://iiif.biblissima.fr/manifests/". $ARK ."/manifest.json";
-$SEQUENCE_URI     = $IIIF_BASE_URI . "/sequence/normal";
-$CANVAS_BASE_URI  = $IIIF_BASE_URI . "/canvas";
-
-/*
- * ====== GET BAM RECORD URL
- */
+$csvData = readCSV( $csvFile );
+$EADID = getEadIdfromCsv( $csvData, $ARK_NAME);
 
 /* 
- * Function to query data.bnf Sparql endpoint to retrieve BAM URL for a given ARK name
+ * From Sparql (data.bnf)
  */
-function getUrlBam( $ARK_NAME ) {
-  
-  $format = 'application/sparql-results+json';
-  
-  $sparqlQuery =
-  "SELECT ?urlBam
-  WHERE {
-    ?p <http://www.w3.org/2000/01/rdf-schema#seeAlso> ?urlBam .
-    ?p <http://rdvocab.info/RDARelationshipsWEMI/electronicReproduction> <http://gallica.bnf.fr/ark:/12148/".$ARK_NAME."> .
-    FILTER regex(?urlBam,'^http://archivesetmanuscrits','i')
-  }";
-  
-  $queryUrl = 'http://data.bnf.fr/sparql?default-graph-uri='
-  .'&query='.urlencode($sparqlQuery)
-  .'&format='.urlencode($format)
-  .'&timeout=0&debug=off';
-  
-  return $queryUrl;
+ 
+//--- Get BAM url
+//$requestURL = getUrlBam( $ARK_NAME );
+//$responseArray = json_decode( request($requestURL), true);
+//$BAM_URL = $responseArray['results']['bindings'][0]['urlBam']['value'];
+
+//--- Get workManifested uri
+// TODO...?
+
+//--- Get marcrel:aut uri
+// TODO..?
+
+
+/* ======================================
+ * ## FUNCTIONS
+ * ======================================
+ */
+
+/* 
+ * Read and retrieve CSV data
+ */
+function readCSV( $input ){
+  $file = fopen($input,"r");
+  $csv = array();
+  while (($row = fgetcsv($file)) !== false) {
+    $csv[] = $row;
+  }
+  fclose($file);
+	return $csv;
 }
 
 /* 
- * Function to get data response back
+ * Build label/value pairs for a given field
+ */
+function setMdField( &$field, $label, $value ) {
+  $field["label"] = $label;
+  $field["value"] = $value;  
+  return $field;
+}
+
+/* 
+ * Get EAD ID from CSV file
+ */
+function getEadIdfromCsv( $csv, $idArk ) {
+  foreach( $csv as $item ) {
+    
+    $eadId = $item[1];
+    $arkName = $item[2];
+    
+    if( $arkName == $idArk ) {
+      return $eadId;
+    }
+  }
+}
+
+/* 
+ * Request with Curl and return data
  */
 function request( $url ) {
   // is curl installed?
@@ -119,15 +128,77 @@ function request( $url ) {
 }
 
 /* 
- * Send request, process response, and get value of URL BAM
+ * Query data.bnf Sparql endpoint to retrieve BAM URL for a given ARK name
  */
-$requestURL = getUrlBam( $ARK_NAME );
-$responseArray = json_decode( request($requestURL), true);
+function getUrlBam( $arkName ) {
+  
+  $format = 'application/sparql-results+json';
+  
+  $sparqlQuery =
+  "SELECT ?urlBam
+  WHERE {
+    ?p <http://www.w3.org/2000/01/rdf-schema#seeAlso> ?urlBam .
+    ?p <http://rdvocab.info/RDARelationshipsWEMI/electronicReproduction> <http://gallica.bnf.fr/ark:/12148/".$arkName."> .
+    FILTER regex(?urlBam,'^http://archivesetmanuscrits','i')
+  }";
+  
+  $queryUrl = 'http://data.bnf.fr/sparql?default-graph-uri='
+  .'&query='.urlencode($sparqlQuery)
+  .'&format='.urlencode($format)
+  .'&timeout=0&debug=off';
+  
+  return $queryUrl;
+}
 
-$BAM_URL = $responseArray['results']['bindings'][0]['urlBam']['value'];
+/* 
+ * Convert object to array recursively
+ */
+function object_to_array($obj) {
+  if(is_object($obj)) $obj = (array) $obj;
+  if(is_array($obj)) {
+    $new = array();
+    foreach($obj as $key => $val) {
+      $new[$key] = object_to_array($val);
+    }
+  }else $new = $obj;
+  return $new;
+}
 
-/*
- * ====== PRESENTATION RESOURCE PROPERTIES
+
+/* ======================================
+ * ## XML DATA SOURCES
+ * ======================================
+ */
+
+$PAGINATION_URL = "http://gallica.bnf.fr/services/Pagination?ark=".$ARK;
+$OAI_RECORD_URL = "http://oai.bnf.fr/oai2/OAIHandler?verb=GetRecord&metadataPrefix=oai_dc&identifier=oai:bnf.fr:gallica/".$ARK;
+
+//--- Load xml files w/ SimpleXML
+$pagination_xml = simplexml_load_file("$PAGINATION_URL");
+$oai_record_xml = simplexml_load_file("$OAI_RECORD_URL");
+
+
+/* ======================================
+ * ## CONSTANTES
+ * ======================================
+ */
+
+$CONTEXT_PREZ = "http://iiif.io/api/presentation/2/context.json";
+$CONTEXT_IMAGE = "http://iiif.io/api/image/1/context.json";
+$PROFILE_IMAGE = "http://iiif.io/api/image/1/level2.json";
+$IIIF_BASE_URI = "http://gallica.bnf.fr/iiif/" . $ARK;
+$IMAGE_BASE_URI = "http://gallica.bnf.fr/" . $ARK;
+$IMAGE_QUALITY = "native.jpg";
+$GALLICA_URL = $IMAGE_BASE_URI;
+
+$MANIFEST_URI     = "http://iiif.biblissima.fr/manifests/". $ARK ."/manifest.json";
+$SEQUENCE_URI     = $IIIF_BASE_URI . "/sequence/normal";
+$CANVAS_BASE_URI  = $IIIF_BASE_URI . "/canvas";
+
+
+/* ======================================
+ * ## PRESENTATION RESOURCE PROPERTIES
+ * ======================================
  */
 
 /* 
@@ -143,24 +214,28 @@ $oai_record_metadata = $oai_record_xml->GetRecord->record->metadata;
 $metadata = $oai_record_metadata->children($nsUriOaiDc);
 $dc = $metadata->children($nsUriDc);
 
-$date = $dc->date;
-$language = $dc->language;
-$identifier = $dc->identifier; // lien gallica
-$title = $dc->title; // utilisé pour mf description
-$source = $dc->source; // cote (utilisé pour mf label)
-$format = $dc->format;
+$dc = object_to_array($dc); // convert simpleXml objects to array
+
+$title = $dc['title'];
+$date = $dc['date'];
+$language = $dc['language'];
+$identifier = $dc['identifier']; // gallica link
+$title = $dc['title']; // used for mf description
+$source = $dc['source']; // shelfmark (used for mf label)
+$format = $dc['format'];
 //$description = $dc->description;
-$rights = $dc->rights;
-$type = $dc->type;
-$creator = $dc->creator;
-$contributor = $dc->contributor;
+//$rights = $dc['rights'];
+$rights = "public domain";
+$type = $dc['type'];
+$creator = $dc['creator'];
+$contributor = $dc['contributor'];
 
 $oaiFields = array(
-  "Title"       => $dc->title,
-  "Date"        => $dc->date,
-  "Language"    => $dc->language,
-  "Creator"     => $dc->creator,
-  "Contributor" => $dc->contributor
+  "Title"       => $title,
+  "Date"        => $date,
+  "Language"    => $language,
+  "Creator"     => $creator,
+  "Contributor" => $contributor
 );
 
 
@@ -232,13 +307,6 @@ if( $source != '' ) {
  * Metadata fields (Manifest level)
  */
 
-// Build label/value pairs for a given field
-function setMdField( &$field, $label, $value ) {
-  $field["label"] = $label;
-  $field["value"] = $value;  
-  return $field;
-}
-
 // Metadata field array
 $mfMetadata = array();
 
@@ -257,7 +325,7 @@ array_push( $mfMetadata, $mdRepository, $mdShelfmark );
 foreach( $oaiFields as $label => $value ) {
   if( !empty($value) ) {
     if( count($value) > 1 ) { // if multiple values
-      $value = (array)$value;
+      //$value = (array)$value;
       $array_val = array();
       foreach( $value as $val) {
         array_push($array_val, $val);
@@ -315,7 +383,9 @@ $thumbnail = array(
 
 $logo = "https://raw.githubusercontent.com/IIIF/m2/master/images/logos/bnf-logo.jpeg";
 $license = "https://creativecommons.org/publicdomain/zero/1.0/";
-if( !empty($BAM_URL) ) {
+
+if( !empty($EADID) ) {
+  $BAM_URL = "http://archivesetmanuscrits.bnf.fr/ead.html?id=".$EADID;
   $related = array(
     array(
       "@id" => $GALLICA_URL,
@@ -346,8 +416,10 @@ $mfProperties = array(
   "viewingHint" => "paged"
 );
 
-/* 
- * ====== PRIMARY RESOURCE TYPES
+
+/* ======================================
+ * ## PRIMARY RESOURCE TYPES
+ * ======================================
  */
 
 /* 
@@ -426,7 +498,7 @@ $manifest = array(
 $manifest = array_merge( $manifest, $mfProperties );
 
 // PHP >= 5.4
-$manifestJson = json_encode( $manifest, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE );
+//$manifestJson = json_encode( $manifest, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE );
 
 // PHP <= 5.4
 //$manifestJson = str_replace('\\/', '/', json_encode($manifest));
@@ -452,7 +524,6 @@ file_put_contents("$mf_dirname/$mf_filename", $manifestJson);*/
 /* 
  * ====== Insert into MongoDB
  */
-
 
 $m = new MongoClient(); // connect to mongo
 $db = $m->selectDB("manifests"); // select database
