@@ -11,6 +11,7 @@
 */
 
 require('include/mongo_connect.php');
+require('include/functions.php');
 
 $baseUri = "http://iiif.biblissima.fr/manifests/";
 
@@ -21,36 +22,20 @@ $baseUri = "http://iiif.biblissima.fr/manifests/";
 
 //--- Get ark identifier from url (in prod)
 $uri = explode("/", $_SERVER['REQUEST_URI']);
-//$ARK_NAME = $uri[4];
-//$ARK_NAME = $uri[5];
-$ark_array = array($uri[2], $uri[3], $uri[4]);
+//$ark_array = array($uri[2], $uri[3], $uri[4]); //vserver
+$ark_array = array($uri[4], $uri[5], $uri[6]); // localhost
 $ARK = implode("/", $ark_array);
 
 //--- Manifest @id
 $mfId = $baseUri.$ARK."/manifest.json";
 
-//--- MongoDB select collection
-$coll = $db->selectCollection("prototype_IM");
+//-- Mongo collection to query
+$coll = "prototype_IM";
 
-// Selection criteria
-$criteria = array(
-  '@id' => $mfId
-);
-
-// Projection operator to exclude _id field from Mongodb
-$projection = array(
-  '_id' => 0 // not applied by Mongodb 1.4.4 (Debian 6): see the workaround below
-);
-
-// Return a cursor of results with 'find'
-$cursor = $coll->find($criteria, $projection);
-
-// If manifest already in db
-if( $cursor->count() > 0 ) {
-  // Function iterator_to_array() not appropriate because it returns an array...
-  //echo json_encode(iterator_to_array($mf));
-
-  // ... So loop through the only result and json_encode it to output the manifest
+if ( !IsManifestInCollection( $db, $coll, $mfId ) ) {
+  echo "Ce manifest n'existe pas dans la base de donn&eacute;es";
+} else {
+  $cursor = IsManifestInCollection( $db, $coll, $mfId );
   foreach ($cursor as $doc) {
     
     // For PHP >= 5.4
@@ -64,8 +49,7 @@ if( $cursor->count() > 0 ) {
     //$doc = mb_convert_encoding($doc, 'UTF-8');
     echo $doc;
   }
-} else{
-  echo "Ce manifest n'existe pas dans la base de données";
 }
+
 
 ?>
