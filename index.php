@@ -53,7 +53,7 @@ require_once('common.php');
   print_r(iterator_to_array($cursor));
   echo "</pre>";*/
 
-  $records_per_page = 15;
+  $records_per_page = 10;
 
   // include pagination class
   require 'Zebra_Pagination.php';
@@ -155,11 +155,19 @@ require_once('common.php');
         </p>
         <p>Manifest : <a href="<?php echo $doc['@id']; ?>" target="_blank"><?php echo $doc['@id']; ?></a></p>
         
-        <form action="viewer.php" method="post" target="_blank">
-          <button type="submit" class="btn btn-default" data-id="<?php echo $doc['@id']; ?>"><span class="glyphicon glyphicon-eye-open" aria-hidden="true"></span>&nbsp; Open in Mirador</button>
-          <input type="hidden" name="manifest" value="<?php echo $doc['@id']; ?>" />
-          <input type="hidden" name="label" value="<?php echo $doc['label']; ?>" />
+        <!-- Former POST method
+         <form action="viewer.php" method="post" target="_blank">
+          <button type="submit" class="btn btn-default" data-id="<?php //echo $doc['@id']; ?>"><span class="glyphicon glyphicon-eye-open" aria-hidden="true"></span>&nbsp; Open in Mirador</button>
+          <input type="hidden" name="manifest" value="<?php //echo $doc['@id']; ?>" />
+          <input type="hidden" name="label" value="<?php //echo $doc['label']; ?>" />
         </form>
+        -->
+        <?php 
+          $uri = explode("/", $doc['@id'] );
+          $ark_array = array($uri[4], $uri[5], $uri[6]);
+          $ARK = implode("/", $ark_array);
+        ?>
+        <a href="http://iiif.biblissima.fr/manifests/view/<?php echo $ARK; ?>" target="_blank" class="btn btn-default" data-id="<?php echo $doc['@id']; ?>"><span class="glyphicon glyphicon-eye-open" aria-hidden="true"></span>&nbsp; Open in Mirador</a>
       </div>
     </div>
   <?php
@@ -196,9 +204,7 @@ require_once('common.php');
       <div class="thumbnail">
         <img src="{{thumbnail.[@id]}}" alt=""></img>
       </div>
-      <small>
-      <span class="glyphicon glyphicon-new-window" aria-hidden="true"></span>&nbsp; <a target="_blank" href="{{related}}">View in Gallica</a>
-      </small>
+      <small>{{{displayRelated related}}}</small>
     </div>
     <div class="item-logo">
       <img src="{{logo}}" height="90" width="90" alt="">
@@ -207,22 +213,87 @@ require_once('common.php');
       <h3>{{label}}</h3>
       <p class="text-muted"><em>{{metadata.[2].value}}</em></p>
       <p>Manifest : <a target="_blank" href="{{[@id]}}">{{[@id]}}</a></p>
+      
+      {{!-- Old markup for Mirador buttons (handled w/ POST)
       <form action="viewer.php" method="post" target="_blank">
         <button type="submit" class="btn btn-default" data-id="{{[@id]}}"><span class="glyphicon glyphicon-eye-open" aria-hidden="true"></span>&nbsp; Open in Mirador</button>
         <input type="hidden" name="manifest" value="{{[@id]}}" />
         <input type="hidden" name="label" value="{{label}}" />
       </form>
+      --}}
+      
+      
+      <a href="http://iiif.biblissima.fr/manifests/view/{{printArk [@id]}}" target="_blank" class="btn btn-default" data-id="{{[@id]}}"><span class="glyphicon glyphicon-eye-open" aria-hidden="true"></span>&nbsp; Open in Mirador</a>
     </div>
   </div>
 </script>
+
 <script>
 $(document).ready(function(){
+  
   /*
    * Handlebars
    */
   var source = $("#item-template").html();
   var template = Handlebars.compile(source);
   var itemAheadDiv = $("#item-ahead");
+  
+  //-- Helper to print ark id in template
+  Handlebars.registerHelper("printArk", function(mfId) {
+    var a = document.createElement('a');
+    a.href = mfId;
+    var path = a.pathname;
+    path = path.split("/");
+    var arkArr = [path[2], path[3], path[4]];
+    var ark = arkArr.join("/");
+    return ark;
+  });
+  
+  //-- Helper to print related links markup in template
+  Handlebars.registerHelper("displayRelated", function(related) {
+    // if multiple related links (i.e. if related is a list)
+    if (related instanceof Array) {
+      var str = "";
+      var links = [];
+      
+      // loop through the list
+      for (var i=0; i<related.length; i++) {
+        
+        var obj = related[i];
+        
+        var link = {};
+        
+        // build a new object for each link w/ id/label pairs
+        // ... not useful if label already in manifest (will need refactor depending on the manifests in db)
+        var id = obj['@id'];
+        link.id = id;
+        
+        if ( id.match(/^http:\/\/gallica/) ) {
+          var label = "View in Gallica";
+          link.label = label;
+        }else if ( id.match(/^http:\/\/archivesetmanuscrits/) ) {
+          var label = "View record";
+          link.label = label;
+        }
+        
+        links.push(link);
+      }
+
+      for (var i=0, j=links.length; i<j; i++) {
+        str = str + '<div class="item-link">';
+        str = str + '<span class="glyphicon glyphicon-new-window" aria-hidden="true"></span>';
+        str = str + '&nbsp; <a target="_blank" href="' + links[i].id + '">'+ links[i].label +'</a>';
+        str = str + '</div>';
+      }
+      
+      return str;
+      
+    }
+    // if only one link w/ url only (string)
+    else if( typeof related === 'string' ) {
+      return '<span class="glyphicon glyphicon-new-window" aria-hidden="true"></span>&nbsp; <a target="_blank" href="' + related + '">View in Gallica</a>';
+    }
+  });  
  
   /*
    * jquery-autocomplete
@@ -244,7 +315,7 @@ $(document).ready(function(){
     queryTokenizer: Bloodhound.tokenizers.whitespace,
     //prefetch: 'autocomplete.php?term=%term',
     remote: 'autocomplete.php?term=%QUERY',
-    limit: 15
+    limit: 35 // max number of suggestions
   });
 
   labels.initialize();
@@ -275,13 +346,13 @@ $(document).ready(function(){
     // get item data based on MongoId
     $.ajax({
       url : 'get_item.php',
-      //data: 'id='+datum._id,
-      data: 'id='+datum._id['$id'],
+      data: 'id='+datum._id, // vserver
+      //data: 'id='+datum._id['$id'], // localhost
       dataType : 'json'
     }
     ).done(function(data) {
       //console.log(data['@id']);
-      
+      var mfId = data['@id'];
       // slideup #itemAhead if it already has contents
       if( $(itemAheadDiv).length > 0 ){
         $(itemAheadDiv).slideUp(200, function(){
