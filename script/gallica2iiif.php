@@ -381,7 +381,7 @@ $thumbnail = array(
   )
 );
 
-$logo = "https://raw.githubusercontent.com/IIIF/m2/master/images/logos/bnf-logo.jpeg";
+$logo = "http://static.biblissima.fr/images/bnf-logo.jpg";
 $license = "https://creativecommons.org/publicdomain/zero/1.0/";
 
 if( !empty($EADID) ) {
