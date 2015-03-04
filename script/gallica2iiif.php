@@ -184,8 +184,8 @@ $oai_record_xml = simplexml_load_file("$OAI_RECORD_URL");
  */
 
 $CONTEXT_PREZ = "http://iiif.io/api/presentation/2/context.json";
-$CONTEXT_IMAGE = "http://iiif.io/api/image/1/context.json";
-$PROFILE_IMAGE = "http://iiif.io/api/image/1/level2.json";
+$CONTEXT_IMAGE = "http://library.stanford.edu/iiif/image-api/1.1/context.json";
+$PROFILE_IMAGE = "http://library.stanford.edu/iiif/image-api/1.1/compliance.html#level2";
 $IIIF_BASE_URI = "http://gallica.bnf.fr/iiif/" . $ARK;
 $IMAGE_BASE_URI = "http://gallica.bnf.fr/" . $ARK;
 $IMAGE_QUALITY = "native.jpg";
@@ -445,9 +445,11 @@ foreach($pages->page as $page) {
       "format"  => "image/jpg",
       "@type"   => "dctypes:Image",
       "service" => array(
-        "@context"  =>  $CONTEXT_IMAGE,
+        "@context"  => $CONTEXT_IMAGE,
         "profile"   => $PROFILE_IMAGE,
-        "@id"       => $IIIF_BASE_URI . "/f" . $ordreImg
+        "@id"       => $IIIF_BASE_URI . "/f" . $ordreImg,
+        "width"     => (int)$imageWidth,
+        "height"    => (int)$imageHeight
       )
     ),
     "on"  => $CANVAS_BASE_URI . "/f" . $ordreImg
