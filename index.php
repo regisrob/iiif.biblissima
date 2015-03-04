@@ -135,7 +135,7 @@ require_once('common.php');
         </small>
       </div>
       <div class="item-logo">
-        <img src="<?php echo $doc['logo']; ?>" alt="" width="90" height="90">
+        <img src="<?php echo $doc['logo']; ?>" alt="">
       </div>
       <div class="item-text">
         <h3><?php echo $doc['label']; ?></h3>
@@ -207,7 +207,7 @@ require_once('common.php');
       <small>{{{displayRelated related}}}</small>
     </div>
     <div class="item-logo">
-      <img src="{{logo}}" height="90" width="90" alt="">
+      <img src="{{logo}}" alt="">
     </div>
     <div class="item-text">
       <h3>{{label}}</h3>

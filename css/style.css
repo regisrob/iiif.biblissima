@@ -36,6 +36,9 @@ a, a:link {
   float: right;
   opacity: .4;
 }
+.item .item-logo img{
+  width: 100px;
+}
 #item-ahead {
   display: none;
   background-color: #f8f5f2;
