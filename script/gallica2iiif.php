@@ -230,13 +230,22 @@ $rights = "public domain";
 $type = $dc['type'];
 $creator = $dc['creator'];
 $contributor = $dc['contributor'];
+$relation = $dc['relation'];
+
+// Get rid of image/jpeg in "format"
+$format = array_flip($format);
+unset($format['image/jpeg']);
+$format = array_flip($format);
+$format = implode($format); // convert to string
 
 $oaiFields = array(
   "Title"       => $title,
   "Date"        => $date,
   "Language"    => $language,
+  "Format"      => $format,
   "Creator"     => $creator,
-  "Contributor" => $contributor
+  "Contributor" => $contributor,
+  "Relation"    => $relation
 );
 
 
@@ -324,7 +333,7 @@ array_push( $mfMetadata, $mdRepository, $mdShelfmark );
 
 // Build label/value pairs for each OAI field
 foreach( $oaiFields as $label => $value ) {
-  if( !empty($value) ) {
+  if( !empty($value) ) {    
     if( count($value) > 1 ) { // if multiple values
       //$value = (array)$value;
       $array_val = array();
@@ -422,7 +431,7 @@ $mfProperties = array(
   "license"     => $license,
   "related"     => $related,
   "seeAlso"     => $seeAlso,
-  "viewingHint" => "paged"
+  "viewingHint" => "individuals"
 );
 
 
@@ -539,7 +548,7 @@ file_put_contents("$mf_dirname/$mf_filename", $manifestJson);*/
 /*
 $m = new MongoClient(); // connect to mongo
 $db = $m->selectDB("manifests"); // select database
-$coll = $db->selectCollection("prototype_IM"); // select collection
+$coll = $db->selectCollection("prototype_ms5"); // select collection
 //echo "Collection de travail : " . $coll->getName() . ".\n";
 //$item = $coll->findOne();
 //echo "ID manifest : " . $item['@id'];
