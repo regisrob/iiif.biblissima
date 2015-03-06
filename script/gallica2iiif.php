@@ -36,10 +36,11 @@ $ARK_NAME = $ark_array[2];
  * From CSV
  */
 //$csvMethodIsEnabled  = true;
-$csvFile = "all_mss_traite.csv";
+$csvFile = "../data/MSS_MongoDB_prototype_IM.csv";
 
 $csvData = readCSV( $csvFile );
-$EADID = getEadIdfromCsv( $csvData, $ARK_NAME);
+//$EADID = getEadIdfromCsv( $csvData, $ARK_NAME);
+$relatedId = getRelatedIdFromCsv( $csvData, $ARK_NAME);
 
 /* 
  * From Sparql (data.bnf)
@@ -85,16 +86,16 @@ function setMdField( &$field, $label, $value ) {
 }
 
 /* 
- * Get EAD ID from CSV file
+ * Get related link ID from CSV file
  */
-function getEadIdfromCsv( $csv, $idArk ) {
+function getRelatedIdFromCsv( $csv, $idArk ) {
   foreach( $csv as $item ) {
     
-    $eadId = $item[1];
+    $relId = $item[1];
     $arkName = $item[2];
     
     if( $arkName == $idArk ) {
-      return $eadId;
+      return $relId;
     }
   }
 }
@@ -383,16 +384,24 @@ $thumbnail = array(
 
 $logo = "http://static.biblissima.fr/images/bnf-logo.jpg";
 $license = "https://creativecommons.org/publicdomain/zero/1.0/";
-
-if( !empty($EADID) ) {
-  $BAM_URL = "http://archivesetmanuscrits.bnf.fr/ead.html?id=".$EADID;
+  
+if( !empty($relatedId) ) {
+  
+  // if id from CG
+  if( preg_match("#^cb#", $relatedId) ) {
+    $relatedUrl = "http://catalogue.bnf.fr/ark:/12148/".$relatedId;
+  // if id from BAM
+  }elseif( preg_match("#^FRBNFEAD#", $relatedId) ) {
+    $relatedUrl = "http://archivesetmanuscrits.bnf.fr/ead.html?id=".$relatedId;
+  }
+  
   $related = array(
     array(
       "@id" => $GALLICA_URL,
       "format" => "text/html"
     ),
     array(
-      "@id" => $BAM_URL,
+      "@id" => $relatedUrl,
       "format" => "text/html"
     )
   );
@@ -500,13 +509,13 @@ $manifest = array(
 $manifest = array_merge( $manifest, $mfProperties );
 
 // PHP >= 5.4
-//$manifestJson = json_encode( $manifest, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE );
+$manifestJson = json_encode( $manifest, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE );
 
 // PHP <= 5.4
 //$manifestJson = str_replace('\\/', '/', json_encode($manifest));
 //$manifestJson = mb_convert_encoding($manifest, 'UTF-8');
 
-//echo $manifestJson;
+echo $manifestJson;
 
 /* 
  * ====== Write manifest to disk
@@ -527,6 +536,7 @@ file_put_contents("$mf_dirname/$mf_filename", $manifestJson);*/
  * ====== Insert into MongoDB
  */
 
+/*
 $m = new MongoClient(); // connect to mongo
 $db = $m->selectDB("manifests"); // select database
 $coll = $db->selectCollection("prototype_IM"); // select collection
@@ -543,5 +553,6 @@ if( $cursor->count() > 0 ) {
 } else{
   $coll->insert( $manifest ); // insert manifest array as json
 }
+*/
 
 ?>
