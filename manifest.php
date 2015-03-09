@@ -29,13 +29,13 @@ $ARK = implode("/", $ark_array);
 //--- Manifest @id
 $mfId = $baseUri.$ARK."/manifest.json";
 
-//-- Mongo collection to query
-$coll = "prototype_IM";
+//-- List Mongo collections in db
+$collections = $db->listCollections();
 
-if ( !IsManifestInCollection( $db, $coll, $mfId ) ) {
+if ( !IsManifestInDb( $collections, $mfId ) ) {
   echo "Ce manifest n'existe pas dans la base de donn&eacute;es";
 } else {
-  $cursor = IsManifestInCollection( $db, $coll, $mfId );
+  $cursor = IsManifestInDb( $collections, $mfId );
   foreach ($cursor as $doc) {
     
     // For PHP >= 5.4
@@ -50,6 +50,5 @@ if ( !IsManifestInCollection( $db, $coll, $mfId ) ) {
     echo $doc;
   }
 }
-
 
 ?>

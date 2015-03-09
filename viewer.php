@@ -22,10 +22,10 @@ if( $naan == "12148" ) {
   $mfId = $baseUri."ark:/12148/".$ARK_NAME."/manifest.json";
 }
 
-//-- Mongo collection to query
-$coll = "prototype_IM";
+//-- List Mongo collections in db
+$collections = $db->listCollections();
 
-if ( !IsManifestInCollection( $db, $coll, $mfId ) ) {
+if ( !IsManifestInDb( $collections, $mfId ) ) {
   echo "Ce manifest n'existe pas dans la base de donn&eacute;es";
 } else {
 ?>
