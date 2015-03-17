@@ -83,7 +83,8 @@ require_once('common.php');
   </div>
   
   <div class="well">
-    <p>This is a first test of a web interface for a <strong>manifests repository at Biblissima</strong> (<span class="text-danger">work-in-progress</span>). Initially this demo presents a selection of digital objects from Gallica available via IIIF standards. It is part of the Initiale/Mandragore prototype on medieval illuminations (work-in-progress too).</p>
+    <p>This is a first test of a web interface for a <strong>manifests repository at Biblissima</strong> (<span class="text-danger">work-in-progress</span>).</p>
+    <p>Initially this demo presents a selection of digital objects from <a href="http://gallica.bnf.fr">Gallica</a> available via IIIF standards. It is part of a prototype on medieval illuminations involving two existing databases: <a href="http://initiale.irht.cnrs.fr">Initiale</a> (IRHT-CNRS) and <a href="http://mandragore.bnf.fr">Mandragore</a> (BnF). The exposure of Gallica manifests is meant to be a temporary solution.</p>
     <p class="text-info">Total number of objects = <strong><?php echo $rows; ?></strong></p>
   </div>
   
