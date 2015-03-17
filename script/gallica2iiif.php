@@ -431,7 +431,7 @@ $mfProperties = array(
   "license"     => $license,
   "related"     => $related,
   "seeAlso"     => $seeAlso,
-  "viewingHint" => "individuals"
+  "viewingHint" => "paged"
 );
 
 
