@@ -42,6 +42,7 @@ $csvData = readCSV( $csvFile );
 //$EADID = getEadIdfromCsv( $csvData, $ARK_NAME);
 $relatedId = getRelatedIdFromCsv( $csvData, $ARK_NAME);
 
+
 /* 
  * From Sparql (data.bnf)
  */
@@ -217,26 +218,26 @@ $dc = $metadata->children($nsUriDc);
 
 $dc = object_to_array($dc); // convert simpleXml objects to array
 
-$title = $dc['title'];
-$date = $dc['date'];
-$language = $dc['language'];
-$identifier = $dc['identifier']; // gallica link
-$title = $dc['title']; // used for mf description
-$source = $dc['source']; // shelfmark (used for mf label)
-$format = $dc['format'];
-//$description = $dc->description;
-//$rights = $dc['rights'];
+$title = !empty($dc['title']) ? $dc['title'] : null; // used for mf description
+$date = !empty($dc['date']) ? $dc['date'] : null;
+$language = !empty($dc['language']) ? $dc['language'] : null; 
+$identifier = !empty($dc['identifier']) ? $dc['identifier'] : null; // gallica link
+$source = !empty($dc['source']) ? $dc['source'] : null; // shelfmark (used for mf label)
+$format = !empty($dc['format']) ? $dc['format'] : null;
+$type = !empty($dc['type']) ? $dc['type'] : null;
+$creator = !empty($dc['creator']) ? $dc['creator'] : null;
+$contributor = !empty($dc['contributor']) ? $dc['contributor'] : null;
+$relation = !empty($dc['relation']) ? $dc['relation'] : null;
 $rights = "public domain";
-$type = $dc['type'];
-$creator = $dc['creator'];
-$contributor = $dc['contributor'];
-$relation = $dc['relation'];
+//$description = $dc['description'];
 
 // Get rid of image/jpeg in "format"
-$format = array_flip($format);
-unset($format['image/jpeg']);
-$format = array_flip($format);
-$format = implode($format); // convert to string
+if( !empty($format) && is_array($format) ) {
+  $format = array_flip($format);
+  unset($format['image/jpeg']);
+  $format = array_flip($format);
+  $format = implode($format); // convert to string
+}
 
 $oaiFields = array(
   "Title"       => $title,
@@ -368,6 +369,15 @@ setMdField( $sourceImages, "Source Images", $GALLICA_URL );
 
 array_push( $mfMetadata, $provider, $disseminator, $sourceImages );
 //echo json_encode( $mfMetadata, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
+
+// Source metadata
+if( !empty($relatedId) ) {
+  $sourceMd = array();
+  $relatedUrl = "http://archivesetmanuscrits.bnf.fr/ead.html?id=".$relatedId;
+  setMdField( $sourceMd, "Source Metadata", $relatedUrl );
+}
+
+array_push( $mfMetadata, $sourceMd );
 
 
 /* 
@@ -518,13 +528,13 @@ $manifest = array(
 $manifest = array_merge( $manifest, $mfProperties );
 
 // PHP >= 5.4
-$manifestJson = json_encode( $manifest, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE );
+//$manifestJson = json_encode( $manifest, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE );
 
 // PHP <= 5.4
 //$manifestJson = str_replace('\\/', '/', json_encode($manifest));
 //$manifestJson = mb_convert_encoding($manifest, 'UTF-8');
 
-echo $manifestJson;
+//echo $manifestJson;
 
 /* 
  * ====== Write manifest to disk
@@ -545,10 +555,9 @@ file_put_contents("$mf_dirname/$mf_filename", $manifestJson);*/
  * ====== Insert into MongoDB
  */
 
-/*
 $m = new MongoClient(); // connect to mongo
 $db = $m->selectDB("manifests"); // select database
-$coll = $db->selectCollection("prototype_ms5"); // select collection
+$coll = $db->selectCollection("prototype_IM"); // select collection
 //echo "Collection de travail : " . $coll->getName() . ".\n";
 //$item = $coll->findOne();
 //echo "ID manifest : " . $item['@id'];
@@ -562,6 +571,5 @@ if( $cursor->count() > 0 ) {
 } else{
   $coll->insert( $manifest ); // insert manifest array as json
 }
-*/
 
 ?>
