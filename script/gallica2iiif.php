@@ -475,9 +475,7 @@ foreach($pages->page as $page) {
       "service" => array(
         "@context"  => $CONTEXT_IMAGE,
         "profile"   => $PROFILE_IMAGE,
-        "@id"       => $IIIF_BASE_URI . "/f" . $ordreImg,
-        "width"     => (int)$imageWidth,
-        "height"    => (int)$imageHeight
+        "@id"       => $IIIF_BASE_URI . "/f" . $ordreImg
       )
     ),
     "on"  => $CANVAS_BASE_URI . "/f" . $ordreImg
