@@ -31,26 +31,31 @@ $ARK_NAME = $ark_array[2];
  * ## DATA INPUT METHODS
  * ======================================
  */
+
+$csvIsEnabled  = false;
+$sparqlIsEnabled = true;
  
 /* 
  * From CSV
  */
-//$csvMethodIsEnabled  = true;
-$csvFile = "../data/MSS_MongoDB_prototype_IM.csv";
+if( $csvIsEnabled !== false ) {
+  $csvFile = "../data/MSS_MongoDB_prototype_IM.csv";
 
-$csvData = readCSV( $csvFile );
-//$EADID = getEadIdfromCsv( $csvData, $ARK_NAME);
-$relatedId = getRelatedIdFromCsv( $csvData, $ARK_NAME);
-
+  $csvData = readCSV( $csvFile );
+  //$EADID = getEadIdfromCsv( $csvData, $ARK_NAME);
+  $relatedId = getRelatedIdFromCsv( $csvData, $ARK_NAME);
+}
 
 /* 
  * From Sparql (data.bnf)
  */
  
 //--- Get BAM url
-//$requestURL = getUrlBam( $ARK_NAME );
-//$responseArray = json_decode( request($requestURL), true);
-//$BAM_URL = $responseArray['results']['bindings'][0]['urlBam']['value'];
+if( $sparqlIsEnabled !== false ) {
+  $requestURL = getUrlBam( $ARK_NAME );
+  $responseArray = json_decode( request($requestURL), true);
+  $urlBam = $responseArray['results']['bindings'][0]['urlBam']['value'];
+}
 
 //--- Get workManifested uri
 // TODO...?
@@ -375,23 +380,30 @@ if( !empty($relatedId) ) {
   $sourceMd = array();
   $relatedUrl = "http://archivesetmanuscrits.bnf.fr/ead.html?id=".$relatedId;
   setMdField( $sourceMd, "Source Metadata", $relatedUrl );
+  array_push( $mfMetadata, $sourceMd );
+}elseif ( !empty($urlBam) ) {
+  $sourceMd = array();
+  $relatedUrl = $urlBam;
+  setMdField( $sourceMd, "Source Metadata", $relatedUrl );
+  array_push( $mfMetadata, $sourceMd );
 }
-
-array_push( $mfMetadata, $sourceMd );
 
 
 /* 
  * Other properties (Manifest level)
  */
 
+// description
 if( !empty($title) ) {
   $description = $title;
 }
 
+// attribution
 if( !empty($rights) ) {
   $attribution = "BnF - ". $rights ."";
 }
-  
+
+// thumbnail
 $thumbnail = array(
   "@id" => $IIIF_BASE_URI . "/f1/full/,150/0/" .$IMAGE_QUALITY,
   "service" => array(
@@ -401,9 +413,13 @@ $thumbnail = array(
   )
 );
 
+// logo
 $logo = "http://static.biblissima.fr/images/bnf-logo.jpg";
+
+// license
 $license = "https://creativecommons.org/publicdomain/zero/1.0/";
-  
+
+// related
 if( !empty($relatedId) ) {
   
   // if id from CG
@@ -424,15 +440,28 @@ if( !empty($relatedId) ) {
       "format" => "text/html"
     )
   );
+}elseif ( !empty($urlBam) ) {
+  $related = array(
+    array(
+      "@id" => $GALLICA_URL,
+      "format" => "text/html"
+    ),
+    array(
+      "@id" => $relatedUrl,
+      "format" => "text/html"
+    )
+  );
 }else {
   $related = "$GALLICA_URL";
 }
 
+// seeAlso
 $seeAlso = array(
   "@id"     => $OAI_RECORD_URL,
   "format"  => "application/xml"
 );
 
+// Array of manifest other properties
 $mfProperties = array(
   "description" => (string)$description,
   "attribution" => $attribution,
@@ -569,5 +598,4 @@ if( $cursor->count() > 0 ) {
 } else{
   $coll->insert( $manifest ); // insert manifest array as json
 }
-
 ?>
