@@ -312,8 +312,14 @@ if( $source != '' ) {
     $shelfmark = trim($cote[0]);
     $mfLabel = "$cote_bib";
   }
-  
-}else { // if no dc:source
+// si cas particulier Egyptien (sans dc:source et avec cote concaténée dans dc:title)
+}elseif( preg_match("#Egyptien#i", $title) ) {
+  $mfLabel = $title;
+  $titleArr = explode(".", $title);
+  $shelfmark = trim(end($titleArr));
+  $repository = "Bibliothèque nationale de France";
+// if no dc:source
+}else {
   $mfLabel = $title;
   $shelfmark = "n/a";
   $repository = "Bibliothèque nationale de France";
