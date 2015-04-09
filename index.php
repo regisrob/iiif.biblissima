@@ -167,7 +167,7 @@ require_once('common.php');
           $ark_array = array($uri[4], $uri[5], $uri[6]);
           $ARK = implode("/", $ark_array);
         ?>
-        <a href="http://iiif.biblissima.fr/manifests/view/<?php echo $ARK; ?>" target="_blank" class="btn btn-default" data-id="<?php echo $doc['@id']; ?>"><span class="glyphicon glyphicon-eye-open" aria-hidden="true"></span>&nbsp; Open in Mirador</a>
+        <a href="http://iiif.biblissima.fr/manifest/view/<?php echo $ARK; ?>" target="_blank" class="btn btn-default" data-id="<?php echo $doc['@id']; ?>"><span class="glyphicon glyphicon-eye-open" aria-hidden="true"></span>&nbsp; Open in Mirador</a>
       </div>
     </div>
   <?php
@@ -223,7 +223,7 @@ require_once('common.php');
       --}}
       
       
-      <a href="http://iiif.biblissima.fr/manifests/view/{{printArk [@id]}}" target="_blank" class="btn btn-default" data-id="{{[@id]}}"><span class="glyphicon glyphicon-eye-open" aria-hidden="true"></span>&nbsp; Open in Mirador</a>
+      <a href="http://iiif.biblissima.fr/manifest/view/{{printArk [@id]}}" target="_blank" class="btn btn-default" data-id="{{[@id]}}"><span class="glyphicon glyphicon-eye-open" aria-hidden="true"></span>&nbsp; Open in Mirador</a>
     </div>
   </div>
 </script>
