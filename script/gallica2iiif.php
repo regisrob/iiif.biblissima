@@ -32,15 +32,14 @@ $ARK_NAME = $ark_array[2];
  * ======================================
  */
 
-$csvIsEnabled  = false;
-$sparqlIsEnabled = true;
- 
+$idFromCsv  = false;
+$idFromSparql = true;
+
 /* 
  * From CSV
  */
-if( $csvIsEnabled !== false ) {
+if( $idFromCsv !== false ) {
   $csvFile = "../data/MSS_MongoDB_prototype_IM.csv";
-
   $csvData = readCSV( $csvFile );
   //$EADID = getEadIdfromCsv( $csvData, $ARK_NAME);
   $relatedId = getRelatedIdFromCsv( $csvData, $ARK_NAME);
@@ -51,7 +50,7 @@ if( $csvIsEnabled !== false ) {
  */
  
 //--- Get BAM url
-if( $sparqlIsEnabled !== false ) {
+if( $idFromSparql !== false ) {
   $requestURL = getUrlBam( $ARK_NAME );
   $responseArray = json_decode( request($requestURL), true);
   $urlBam = $responseArray['results']['bindings'][0]['urlBam']['value'];
