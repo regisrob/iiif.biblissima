@@ -14,7 +14,7 @@ $query = array(
 
 // Fields to return
 $projection = array(
-  '_id'       => 0, // Mongodb 1.4.4-3 does not support this
+  //'_id'       => 0, // Mongodb 1.4.4-3 does not support this
   'label'     => true,
   'thumbnail' => true,
   'logo'      => true,
@@ -23,11 +23,11 @@ $projection = array(
   '@id'       => true
 );
 
-// for Mongodb 1.4.4-3 only (does not support exclude option)
-//unset($doc['_id']);
-
 // Find the doc based on its MongoId
 $doc = $coll->findOne( $query, $projection );
+
+// for Mongodb 1.4.4-3 only (does not support exclude option)
+unset($doc['_id']);
 
 // Serialize as json
 echo json_encode( $doc );
