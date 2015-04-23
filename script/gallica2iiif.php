@@ -32,7 +32,7 @@ $ARK_NAME = $ark_array[2];
  * ======================================
  */
 
-$idFromCsv  = false;
+$idFromCsv  = true;
 $idFromSparql = true;
 
 /* 
@@ -53,7 +53,10 @@ if( $idFromCsv !== false ) {
 if( $idFromSparql !== false ) {
   $requestURL = getUrlBam( $ARK_NAME );
   $responseArray = json_decode( request($requestURL), true);
-  $urlBam = $responseArray['results']['bindings'][0]['urlBam']['value'];
+  
+  if ( !empty($responseArray['results']['bindings']) ) {
+    $urlBam = $responseArray['results']['bindings'][0]['urlBam']['value'];
+  }
 }
 
 //--- Get workManifested uri
@@ -96,10 +99,12 @@ function setMdField( &$field, $label, $value ) {
 function getRelatedIdFromCsv( $csv, $idArk ) {
   foreach( $csv as $item ) {
     
-    $relId = $item[1];
+    //if ( !empty($item[1]) ) {
+      $relId = $item[1];
+    //}
     $arkName = $item[2];
     
-    if( $arkName == $idArk ) {
+    if( $arkName == $idArk && !empty($relId) ) {
       return $relId;
     }
   }
@@ -586,6 +591,7 @@ file_put_contents("$mf_dirname/$mf_filename", $manifestJson);*/
 /* 
  * ====== Insert into MongoDB
  */
+
 
 $m = new MongoClient(); // connect to mongo
 $db = $m->selectDB("manifests"); // select database
