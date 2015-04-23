@@ -14,7 +14,9 @@ $baseUri = "http://iiif.biblissima.fr/manifests/";
 $uri = explode("/", $_SERVER['REQUEST_URI']);
 $naan = $uri[4]; //vserver
 $ARK_NAME = $uri[5]; //vserver
-$folio = $uri[6]; //vserver
+if ( !empty($uri[6]) ) {
+  $folio = $uri[6]; //vserver
+}
 //$naan = $uri[7]; // localhost
 //$ARK_NAME = $uri[8]; // localhost
 
