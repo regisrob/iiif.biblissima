@@ -473,7 +473,7 @@ $seeAlso = array(
 
 // Array of manifest other properties
 $mfProperties = array(
-  "description" => (string)$description,
+  "description" => $description,
   "attribution" => $attribution,
   "thumbnail"   => $thumbnail,
   "logo"        => $logo,
@@ -591,7 +591,6 @@ file_put_contents("$mf_dirname/$mf_filename", $manifestJson);*/
 /* 
  * ====== Insert into MongoDB
  */
-
 
 $m = new MongoClient(); // connect to mongo
 $db = $m->selectDB("manifests"); // select database
