@@ -3,6 +3,7 @@ require('include/mongo_connect.php');
 require('include/functions.php');
 
 $baseUri = "http://iiif.biblissima.fr/manifests/";
+$baseUriHttps = "https://iiif.biblissima.fr/manifests/";
 
 //-- Params from POST
 /*if(isset($_POST['manifest']) && isset($_POST['label']) ) {
@@ -28,6 +29,8 @@ if( $naan == "12148" ) {
     $startCanvas = "http://gallica.bnf.fr/iiif/ark:/12148/".$ARK_NAME."/canvas/".$folio;
   }
 }
+
+$mfUrl = $baseUriHttps."ark:/12148/".$ARK_NAME."/manifest.json";;
 
 //-- List Mongo collections in db
 $collections = $db->listCollections();
@@ -72,14 +75,14 @@ if ( !IsManifestInDb( $collections, $mfId ) ) {
         "mainMenuSettings" : {"show": false, "buttons" : {"bookmark" : false, "layout" : false}},
         "showAddFromURLBox" : false,
         "data": [
-          { "manifestUri": "<?php echo $mfId ?>", "location": "BnF"}
+          { "manifestUri": "<?php echo $mfUrl ?>", "location": "BnF"}
           //{ "manifestUri": "http://iiif.biblissima.fr/manifests/ark:/12148/btv1b53014833h/manifest.json", "location": "BnF"},
           //{ "manifestUri": "http://oculus-dev.harvardx.harvard.edu/manifests/huam:198021", "location": "Harvard University"}
           //{ "manifestUri": "http://iiif.biblissima.fr/manifests/ark:/12148/btv1b53014833h/manifest.json", "location": "BnF"},
         ],
         "windowObjects": [
         {
-          "loadedManifest": "<?php echo $mfId ?>",
+          "loadedManifest": "<?php echo $mfUrl ?>",
           <?php
             if( !empty($startCanvas) ) {
               echo " \"viewType\": \"ImageView\", ";
