@@ -4,7 +4,16 @@
  *  @author : Régis Robineau
  *  @project : Equipex Biblissima
  *  @description : Create a JSON-LD manifest (IIIF Presentation API 2.0) for one Gallica object out of two webservices provided by the BnF (OAI-PMH and Pagination.xml), and send it to a MongoDB database
- *
+ *  @toc :
+ *    - #1 GET ARK PARAMETER
+ *    - #2 DATA INPUT METHODS
+ *    - #3 FUNCTIONS
+ *    - #4 XML DATA SOURCES
+ *    - #5 CONSTANTES
+ *    - #6 P-API RESOURCE PROPERTIES
+ *    - #7 P-API PRIMARY RESOURCE TYPES
+ *    - #8 JSON OUTPUT
+ *    - #9 MONGODB
  * ================================================================
 */
  
@@ -13,18 +22,21 @@
  * ======================================
  */
 
-//--- Get ark name from url param (in dev)
-$ARK = $_GET['ark'];
-$ark_array = explode("/", $ARK);
-$ARK_NAME = $ark_array[2];
+//--- Method 1: Get ark name from url parameter (in dev)
+//$ARK = $_GET['ark'];
+//$ark_array = explode("/", $ARK);
+//$ARK_NAME = $ark_array[2];
 
-//--- Get ark name from url (in prod)
+//--- Method 2: Get ark name from url path (in prod)
 //$uri = explode("/", $_SERVER['REQUEST_URI']);
 //$ARK_NAME = $uri[4];
 
-//--- Get full ark identifier from url (build manifest from url for any Gallica object)
-//$ark_array = array($uri[2], $uri[3], $uri[4]);
-//$ARK = implode("/", $ark_array);
+//--- Method 3: Get full ark identifier from url path (build manifest from url for any Gallica object)
+// Only works with the following directive in Apache vhost :
+// AliasMatch /manifests/ark:/12148/([a-z0-9]*)/manifest$ /path/to/gallica2iiif.php
+$uri = explode("/", $_SERVER['REQUEST_URI']);
+$ark_array = array($uri[2], $uri[3], $uri[4]);
+$ARK = implode("/", $ark_array);
 
 
 /* ======================================
@@ -32,8 +44,10 @@ $ARK_NAME = $ark_array[2];
  * ======================================
  */
 
-$idFromCsv  = true;
-$idFromSparql = true;
+// Enable method to get EADID from CSV (for "related" field)
+$idFromCsv  = false;
+// Enable method to get EADID from Sparql data.bnf (for "related" field)
+$idFromSparql = false;
 
 /* 
  * From CSV
@@ -41,7 +55,6 @@ $idFromSparql = true;
 if( $idFromCsv !== false ) {
   $csvFile = "../data/MSS_MongoDB_prototype_IM.csv";
   $csvData = readCSV( $csvFile );
-  //$EADID = getEadIdfromCsv( $csvData, $ARK_NAME);
   $relatedId = getRelatedIdFromCsv( $csvData, $ARK_NAME);
 }
 
@@ -208,7 +221,7 @@ $CANVAS_BASE_URI  = $IIIF_BASE_URI . "/canvas";
 
 
 /* ======================================
- * ## PRESENTATION RESOURCE PROPERTIES
+ * ## PRESENTATION API RESOURCE PROPERTIES
  * ======================================
  */
 
@@ -263,7 +276,6 @@ $oaiFields = array(
  * Manifest label : custom formatted shelfmark
  */
 
-//if( !empty($source) ) {
 if( $source != '' ) {
 
   $cote = explode(",", $source);
@@ -307,27 +319,27 @@ if( $source != '' ) {
   // Cas pour 3e partie de la cote
   // if not empty or not null
   if( !empty($cote[2]) ) {
-    $shelfmark = trim($cote[2]); // Numeric shelfmark (fonds + number)
-    $mfLabel = "$cote_bib $cote_depot $shelfmark"; // Manifest label
-  }elseif( !empty($cote[1]) ) {
-    $shelfmark = trim($cote[1]);
-    $mfLabel = "$cote_bib $cote_depot";
+      $shelfmark = trim($cote[2]); // Numeric shelfmark (fonds + number)
+      $mfLabel = "$cote_bib $cote_depot $shelfmark"; // Manifest label
+    }elseif( !empty($cote[1]) ) {
+      $shelfmark = trim($cote[1]);
+      $mfLabel = "$cote_bib $cote_depot";
+    }else {
+      $shelfmark = trim($cote[0]);
+      $mfLabel = "$cote_bib";
+    }
+  // si cas particulier Egyptien (sans dc:source et avec cote concaténée dans dc:title)
+  }elseif( preg_match("#Egyptien#i", $title) ) {
+    $mfLabel = $title;
+    $titleArr = explode(".", $title);
+    $shelfmark = trim(end($titleArr));
+    $repository = "Bibliothèque nationale de France";
+  // elseif no dc:source
   }else {
-    $shelfmark = trim($cote[0]);
-    $mfLabel = "$cote_bib";
+    $mfLabel = $title;
+    $shelfmark = "n/a";
+    $repository = "Bibliothèque nationale de France";
   }
-// si cas particulier Egyptien (sans dc:source et avec cote concaténée dans dc:title)
-}elseif( preg_match("#Egyptien#i", $title) ) {
-  $mfLabel = $title;
-  $titleArr = explode(".", $title);
-  $shelfmark = trim(end($titleArr));
-  $repository = "Bibliothèque nationale de France";
-// if no dc:source
-}else {
-  $mfLabel = $title;
-  $shelfmark = "n/a";
-  $repository = "Bibliothèque nationale de France";
-}
 
 /* 
  * Metadata fields (Manifest level)
@@ -564,14 +576,20 @@ $manifest = array(
 
 $manifest = array_merge( $manifest, $mfProperties );
 
-// PHP >= 5.4
-//$manifestJson = json_encode( $manifest, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE );
+/* ======================================
+ * ## JSON OUTPUT
+ * ======================================
+ */
 
-// PHP <= 5.4
+// Serialize as JSON (PHP >= 5.4)
+$manifestJson = json_encode( $manifest, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE );
+
+// Serialize as JSON (PHP <= 5.4)
 //$manifestJson = str_replace('\\/', '/', json_encode($manifest));
-//$manifestJson = mb_convert_encoding($manifest, 'UTF-8');
+//$manifestJson = mb_convert_encoding($manifestJson, 'UTF-8');
 
-//echo $manifestJson;
+// Output JSON manifest
+echo $manifestJson;
 
 /* 
  * ====== Write manifest to disk
@@ -588,8 +606,13 @@ if (!is_dir($mf_dirname)) {
 file_put_contents("$mf_dirname/$mf_filename", $manifestJson);*/
 
 
+/* ======================================
+ * ## MONGODB
+ * ======================================
+ */
+
 /* 
- * ====== Insert into MongoDB
+ * ====== Insert JSON into MongoDB
  */
 
 $m = new MongoClient(); // connect to mongo
