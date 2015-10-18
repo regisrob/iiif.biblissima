@@ -35,9 +35,14 @@
 // Only works with the following directive in Apache vhost :
 // AliasMatch /manifests/ark:/12148/([a-z0-9]*)/manifest$ /path/to/gallica2iiif.php
 $uri = explode("/", $_SERVER['REQUEST_URI']);
+// vserver
 $ark_array = array($uri[2], $uri[3], $uri[4]);
 $ARK = implode("/", $ark_array);
-
+$ARK_NAME = $ark_array[2];
+// localhost
+//$ark_array = array($uri[4], $uri[5], $uri[6]);
+//$ARK = implode("/", $ark_array);
+//$ARK_NAME = $ark_array[2];
 
 /* ======================================
  * ## DATA INPUT METHODS
@@ -194,7 +199,7 @@ function object_to_array($obj) {
  * ======================================
  */
 
-$PAGINATION_URL = "http://gallica.bnf.fr/services/Pagination?ark=".$ARK;
+$PAGINATION_URL = "http://gallica.bnf.fr/services/Pagination?ark=".$ARK_NAME;
 $OAI_RECORD_URL = "http://oai.bnf.fr/oai2/OAIHandler?verb=GetRecord&metadataPrefix=oai_dc&identifier=oai:bnf.fr:gallica/".$ARK;
 
 //--- Load xml files w/ SimpleXML
@@ -589,7 +594,7 @@ $manifestJson = json_encode( $manifest, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASH
 //$manifestJson = mb_convert_encoding($manifestJson, 'UTF-8');
 
 // Output JSON manifest
-echo $manifestJson;
+//echo $manifestJson;
 
 /* 
  * ====== Write manifest to disk
