@@ -8,7 +8,7 @@ $term = $_GET['term'];
  * Method 1: search with regex and collection->find
  */
 
-/*
+
 $coll = $db->selectCollection("prototype_IM"); // select collection
 $regexObj = new MongoRegex("/$term/i"); // regex
 
@@ -27,7 +27,7 @@ $projection = array(
 
 // Find in collection
 $cursor = $coll->find( $query, $projection );
-*/
+
 // fin Method 1
 
 
@@ -35,7 +35,7 @@ $cursor = $coll->find( $query, $projection );
  * Method 2: full-text indexed search
  * NB : Mongodb 1.4.4-3 does not support it
  */
-
+/*
 $results = $db->command(
   array(
     'text' => 'prototype_IM', // collection where we are searching
@@ -48,6 +48,7 @@ $results = $db->command(
     )
   )
 );
+*/
 // fin Method 2
 
 /*
@@ -71,17 +72,17 @@ foreach ($cursor as $doc) {
 $response = array();  
 
 // data coming from Method 1
-/*foreach ($cursor as $doc) {
+foreach ($cursor as $doc) {
   //unset($doc['_id']);
   //$doc['_id'] = $doc['_id'].$id; // $id raises php Notice: undefined variable
   $doc['_id'] = $doc['_id']->{'$id'}; // this one is correct
   //$doc['_id'] = implode( array_values( $doc['_id'] ) );
   //$doc = implode( array_values( $doc ) );
   array_push( $response, $doc);
-}*/
+}
 
 // data coming from Method 2
-$results = $results['results'];
+/*$results = $results['results'];
 foreach ($results as $result) {
   //$result = array(
   //  "label" => implode( array_values($result['obj']) )
@@ -91,7 +92,7 @@ foreach ($results as $result) {
   //$result['_id'] = $result['_id'].$id;
   $doc['_id'] = $doc['_id']->{'$id'};
   array_push( $response, $result);
-}
+}*/
 
 echo json_encode( $response );
 
