@@ -22,8 +22,8 @@ $baseUri = "http://iiif.biblissima.fr/manifests/";
 
 //--- Get ark identifier from url (in prod)
 $uri = explode("/", $_SERVER['REQUEST_URI']);
-//$ark_array = array($uri[2], $uri[3], $uri[4]); //vserver
-$ark_array = array($uri[4], $uri[5], $uri[6]); // localhost
+$ark_array = array($uri[2], $uri[3], $uri[4]); // server
+//$ark_array = array($uri[4], $uri[5], $uri[6]); // localhost
 $ARK = implode("/", $ark_array);
 
 //--- Manifest @id
