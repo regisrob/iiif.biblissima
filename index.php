@@ -12,7 +12,7 @@ require_once('common.php');
   <meta name="description" content="">
     
   <link href="<?php echo $staticBaseUrl; ?>libs/bootstrap/css/bootstrap.min.css" rel="stylesheet">
-  <link href="<?php echo $staticBaseUrl; ?>/css/style.css" rel="stylesheet">
+  <link href="<?php echo $staticBaseUrl; ?>css/style.css" rel="stylesheet">
   <link href="css/style.css" rel="stylesheet">
   <link href="css/typeaheadjs.css" rel="stylesheet">
   <link href="css/zebra_pagination.css" rel="stylesheet">
