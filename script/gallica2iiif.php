@@ -140,17 +140,13 @@ function request( $url ) {
   // get curl handle
   $ch = curl_init();
   
-  // set request url
-  curl_setopt($ch,
-    CURLOPT_URL,
-    $url);
+  // set request options
+  curl_setopt($ch, CURLOPT_URL, $url);
+  curl_setopt($ch, CURLOPT_PROXY, "http://proxy.unicaen.fr");
+  curl_setopt($ch, CURLOPT_PROXYPORT, "3128");  
+  curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
   
-  // return response, don't print/echo
-  curl_setopt($ch,
-    CURLOPT_RETURNTRANSFER,
-    true);
-  
-  // More options for curl: http://www.php.net/curl_setopt	
+  // return response, don't print/echo	
   $response = curl_exec($ch);
   curl_close($ch);
   return $response;
@@ -202,9 +198,9 @@ function object_to_array($obj) {
 $PAGINATION_URL = "http://gallica.bnf.fr/services/Pagination?ark=".$ARK_NAME;
 $OAI_RECORD_URL = "http://oai.bnf.fr/oai2/OAIHandler?verb=GetRecord&metadataPrefix=oai_dc&identifier=oai:bnf.fr:gallica/".$ARK;
 
-//--- Load xml files w/ SimpleXML
-$pagination_xml = simplexml_load_file("$PAGINATION_URL");
-$oai_record_xml = simplexml_load_file("$OAI_RECORD_URL");
+//--- Request w/ Curl and load xml output w/ SimpleXML
+$pagination_xml = simplexml_load_string( request($PAGINATION_URL) );
+$oai_record_xml = simplexml_load_string( request($OAI_RECORD_URL) );
 
 
 /* ======================================
