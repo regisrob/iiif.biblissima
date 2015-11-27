@@ -522,7 +522,7 @@ foreach($pages->page as $page) {
     "motivation"  => "sc:painting",
     "resource"    => array(
       "@id"     => $IMAGE_BASE_URI . "/f" . $ordreImg . ".highres",
-      "format"  => "image/jpg",
+      "format"  => "image/jpeg",
       "@type"   => "dctypes:Image",
       "service" => array(
         "@context"  => $CONTEXT_IMAGE,
