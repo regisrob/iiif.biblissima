@@ -11,8 +11,8 @@ require_once('common.php');
   
   <meta name="description" content="">
     
-  <link href="<?php echo $staticBaseUrl; ?>libs/bootstrap/css/bootstrap.min.css" rel="stylesheet">
-  <link href="<?php echo $staticBaseUrl; ?>css/style.css" rel="stylesheet">
+  <link href="<?php echo $staticBaseUrl; ?>/vendor/bootstrap/3.3.5/css/bootstrap.min.css" rel="stylesheet">
+  <link href="<?php echo $staticBaseUrl; ?>/css/style.css" rel="stylesheet">
   <link href="css/style.css" rel="stylesheet">
   <link href="css/typeaheadjs.css" rel="stylesheet">
   <link href="css/zebra_pagination.css" rel="stylesheet">
@@ -195,7 +195,7 @@ require_once('common.php');
 <script src="js/typeahead.bundle.min.js"></script>
 <script src="js/handlebars.min.js"></script>
 <script src="js/zebra_pagination.js"></script>
-<script src="<?php echo $staticBaseUrl; ?>libs/bootstrap/js/bootstrap.min.js"></script>
+<script src="<?php echo $staticBaseUrl; ?>/vendor/bootstrap/3.3.5/js/bootstrap.min.js"></script>
 
 <!-- HANDLEBARS TEMPLATE -->
 <script id="item-template" type="text/x-handlebars-template">
